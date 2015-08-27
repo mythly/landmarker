@@ -277,11 +277,10 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->slider->setEnabled(false);
     connect(timer_frame, SIGNAL(timeout()), this, SLOT(frame_come()));
     installEventFilter(this);
-    /*
+
     image_folder = QFileDialog::getExistingDirectory(this, "Select Image Folder");
     image_folder = QFileInfo(image_folder).absoluteFilePath();
-    */
-    image_folder = "D:/face tracking/benchmark/image";
+    //image_folder = "D:/face tracking/benchmark/image";
 }
 
 MainWindow::~MainWindow()
@@ -335,14 +334,12 @@ void MainWindow::handleSequenceEvent(QEvent *e)
         handleVideoEvent(&e);
     }
 
-    if (e->type() == OpenSequence) {                
-        /*
+    if (e->type() == OpenSequence) {                        
         QString path = QFileDialog::getOpenFileName(this, "Open", "", " sequence file (*.json)");
         if (path.isEmpty())
             return;
-        path = QFileInfo(path).absoluteFilePath();
-        */
-        QString path = "D:/face tracking/benchmark/data/groundtruth/ab1.json";
+        path = QFileInfo(path).absoluteFilePath();        
+        //QString path = "D:/face tracking/benchmark/data/groundtruth/ab1.json";
 
         ui->statusBar->showMessage("Loading");
         Sequence* new_seq = new Sequence(path, image_folder);
