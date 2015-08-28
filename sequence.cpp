@@ -152,8 +152,6 @@ const QImage& Sequence::image(int idx)
 void Sequence::set(int value)
 {
     n = value - 1;
-    if (n > 0 && _a[n - 1]->type == Annotation::Unclear && _a[n]->type == Annotation::Empty)
-        _a[n]->type = Annotation::Unclear;
 }
 
 int Sequence::get()
@@ -163,9 +161,18 @@ int Sequence::get()
 
 void Sequence::generate()
 {
+    Mat gray0, gray1;
+    Point2f landmark0[M], landmark1[M];
+    if (n > 0 && _a[n - 1]->type == Annotation::Unclear && _a[n]->type == Annotation::Empty) {
+        _g->generate(Rect2f(_c.x(), _c.y(), _c.width(), _c.height()), landmark1);
+        _a[n]->type = Annotation::Unclear;
+        for (int i = 0; i < M; ++i) {
+            _a[n]->landmark[i].setX(landmark1[i].x);
+            _a[n]->landmark[i].setY(landmark1[i].y);
+        }
+        _a[n]->update();
+    }
     if (_a[n]->type == Annotation::Empty || _a[n]->type == Annotation::Auto) {
-        Mat gray0, gray1;
-        Point2f landmark0[M], landmark1[M];
         if (n > 0 && (_a[n - 1]->type == Annotation::Manual || _a[n - 1]->type == Annotation::Auto)) {
             Rect2f rect0(_a[n - 1]->rect.x(), _a[n - 1]->rect.y(), _a[n - 1]->rect.width(), _a[n - 1]->rect.height());
             gray0 = toGray(image(n - 1));

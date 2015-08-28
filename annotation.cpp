@@ -197,7 +197,7 @@ void Annotation::modify_type()
     if (type != Unclear)
         type = Unclear;
     else
-        type = Empty;
+        type = Auto;
 }
 
 void Annotation::modify_landmark(int idx, QPointF p)
@@ -208,14 +208,12 @@ void Annotation::modify_landmark(int idx, QPointF p)
 }
 
 void Annotation::update()
-{
-    if (type != Empty && type != Unclear) {
-        posit(landmark);
-        get_pose();
-        get_rect();
-        get_ellipse();
-        get_camera();
-    }
+{    
+    posit(landmark);
+    get_pose();
+    get_rect();
+    get_ellipse();
+    get_camera();
 }
 
 void Annotation::posit(QPointF landmark[])

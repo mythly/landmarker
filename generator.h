@@ -19,6 +19,7 @@ public:
     ~Generator();
 
     void generate(Point2f landmark1[]);
+    void generate(Rect2f rect1, Point2f landmark1[]);
     void generate(Mat gray1, Point2f landmark1[]);
     void generate(Mat gray1, Point2f landmark1[], Mat gray0, Point2f landmark0[], Rect2f rect0);
 

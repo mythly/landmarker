@@ -23,6 +23,16 @@ Generator::~Generator()
 
 void Generator::generate(Point2f landmark1[])
 {
+    float x = image_size.width * 0.5f;
+    float y = image_size.height * 0.5f;
+    float l = min(image_size.width, image_size.height) * 0.5f;
+    x -= l * 0.5f;
+    y -= l * 0.5f;
+    generate(Rect2f(x, y, l, l), landmark1);
+}
+
+void Generator::generate(Rect2f rect1, Point2f landmark1[])
+{
     Point2f mean_pose[] = {
         Point2f(11.0812f, 10.7494f),
         Point2f(26.9188f, 10.7494f),
@@ -30,10 +40,10 @@ void Generator::generate(Point2f landmark1[])
         Point2f(12.1041f, 27.9159f),
         Point2f(25.8959f, 27.9159f)
     };
-    float scale = float(min(image_size.width, image_size.height)) / 80.0f;
+    float scale = float(min(rect1.width, rect1.height)) / 40.0f;
     for (int i = 0; i < 5; ++i) {
-        landmark1[i].x = (mean_pose[i].x - mean_pose[2].x) * scale + image_size.width * 0.5f;
-        landmark1[i].y = (mean_pose[i].y - mean_pose[2].y) * scale + image_size.height * 0.5f;
+        landmark1[i].x = (mean_pose[i].x - mean_pose[2].x) * scale + rect1.x + rect1.width * 0.5f;
+        landmark1[i].y = (mean_pose[i].y - mean_pose[2].y) * scale + rect1.y + rect1.height * 0.5f;
     }
 }
 

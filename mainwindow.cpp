@@ -183,7 +183,7 @@ void FaceScreen::mousePressEvent(QMouseEvent *e)
         return;
     if (e->button() == Qt::RightButton) {
         a.modify_type();
-        if (a.type == Annotation::Empty)
+        if (a.type == Annotation::Auto)
             s->generate();
         hints = "Type : " + Annotation::toString(a.type);
         emit changed();
