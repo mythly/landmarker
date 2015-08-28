@@ -157,6 +157,25 @@ void FaceScreen::paintEvent(QPaintEvent *e)
     a.paint(painter, qScale(size(), c.size()));
 }
 
+void FaceScreen::wheelEvent(QWheelEvent *e)
+{
+    if (playing)
+        return;
+
+    QRectF &c = s->camera();
+    qreal f = qPow(ScaleFactor, e->angleDelta().y() / qreal(120));
+    qreal x = c.x() - c.width() * (f - 1) / 2;
+    qreal y = c.y() - c.height() * (f - 1) / 2;
+    qreal w = c.width() * f, h = c.height() * f;
+    if (f < 1 && w < 16 && h < 16)
+        return;
+    if (f > 1 && w > s->width() && h > s->height())
+        return;
+
+    c = QRectF(x, y, w, h);
+    emit changed();
+}
+
 void FaceScreen::mousePressEvent(QMouseEvent *e)
 {
     Annotation &a = s->annotation();
@@ -165,12 +184,10 @@ void FaceScreen::mousePressEvent(QMouseEvent *e)
     if (e->button() == Qt::RightButton) {
         a.modify_type();
         if (a.type == Annotation::Empty)
-            s->set();
+            s->generate();
         hints = "Type : " + Annotation::toString(a.type);
         emit changed();
-        return;
-    }
-    if (e->button() == Qt::LeftButton) {
+    }else {
         QPointF p = e->localPos();
         QPointF gp = toGlobal(p);
         const QRectF &c = s->camera();
@@ -207,7 +224,16 @@ void FaceScreen::mouseMoveEvent(QMouseEvent *e)
 
     if (flag_drag == Empty || !QRectF(QPointF(), size()).contains(p))
         return;
-    drag(a, start_pos, gp);
+    switch (flag_drag) {
+    case EyeLeft:
+    case EyeRight:
+    case Nose:
+    case MouseLeft:
+    case MouseRight:
+        a.modify_landmark(flag_drag, gp);
+        hints = names[flag_drag] + " : " + toString(gp);
+        break;
+    }
     start_pos = gp;
     emit changed();
 }
@@ -230,38 +256,8 @@ FaceScreen::FlagDrag FaceScreen::target(const Annotation &a, QPointF gp, qreal l
     const QPointF* p = a.landmark;
     for (int i = 0; i < M; ++i)
         if (L2(p[i] - gp) <= limit)
-            return FlagDrag(i);   
-    if (L2(QLineF(p[0], p[1]), gp) <= limit)
-        return Eyes;
-    if (L2(QLineF(p[3], p[4]), gp) <= limit)
-        return Mouse;   
+            return FlagDrag(i);
     return Empty;
-}
-
-void FaceScreen::drag(Annotation &a, QPointF from, QPointF to)
-{    
-    const QPointF *p = a.landmark;
-
-    switch (flag_drag) {
-    case EyeLeft:
-    case EyeRight:
-    case Nose:
-    case MouseLeft:
-    case MouseRight:
-        hints = names[flag_drag] + " : " + toString(to);
-        a.modify_landmark(flag_drag, to);
-        break;
-    case Eyes:
-        a.modify_landmark(0, p[0] + to - from);
-        a.modify_landmark(1, p[1] + to - from);
-        hints = "Eyes";
-        break;
-    case Mouse:
-        a.modify_landmark(3, p[3] + to - from);
-        a.modify_landmark(4, p[4] + to - from);
-        hints = "Mouses";
-        break;    
-    }
 }
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -275,12 +271,22 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
     setWindowTitle(Title);
     ui->slider->setEnabled(false);
+
+    separator[0] = ui->menu_File->insertSeparator(ui->actionExit);
+    separator[1] = ui->menu_File->insertSeparator(ui->actionExit);
+    for (int i = 0; i < MaxRecentFiles; ++i) {
+        recent.push_back(new QAction(this));
+        connect(recent[i], SIGNAL(triggered()), this, SLOT(open_recent()));
+    }
+    for (int i = 0; i < recent.size(); ++i)
+        ui->menu_File->insertAction(separator[1], recent[i]);
+    update_recent();
+
+    get_folder();
+    ui->statusBar->showMessage("Current Image Folder : " + image_folder, LongTime);
+
     connect(timer_frame, SIGNAL(timeout()), this, SLOT(frame_come()));
     installEventFilter(this);
-
-    image_folder = QFileDialog::getExistingDirectory(this, "Select Image Folder");
-    image_folder = QFileInfo(image_folder).absoluteFilePath();
-    //image_folder = "D:/face tracking/benchmark/image";
 }
 
 MainWindow::~MainWindow()
@@ -334,12 +340,14 @@ void MainWindow::handleSequenceEvent(QEvent *e)
         handleVideoEvent(&e);
     }
 
-    if (e->type() == OpenSequence) {                        
-        QString path = QFileDialog::getOpenFileName(this, "Open", "", " sequence file (*.json)");
+    if (e->type() == OpenSequence) {
+        QString path = recent_path;
+        recent_path.clear();
+        if (path.isEmpty())
+            path = QFileDialog::getOpenFileName(this, "Open", "", " sequence file (*.json)");
         if (path.isEmpty())
             return;
-        path = QFileInfo(path).absoluteFilePath();        
-        //QString path = "D:/face tracking/benchmark/data/groundtruth/ab1.json";
+        path = QFileInfo(path).absoluteFilePath();
 
         ui->statusBar->showMessage("Loading");
         Sequence* new_seq = new Sequence(path, image_folder);
@@ -383,6 +391,15 @@ void MainWindow::handleSequenceEvent(QEvent *e)
         ui->progress->setText(text);
         ui->slider->setValue(1);
 
+        QSettings settings(Author, Title);
+        QStringList files = settings.value("recent").toStringList();
+        files.removeAll(path);
+        files.prepend(path);
+        while (files.size() > MaxRecentFiles)
+            files.removeLast();
+        settings.setValue("recent", files);
+        update_recent();
+
         setWindowTitle(seq->name() + " - " + Title);
         ui->type->setText(Annotation::toString(seq->annotation().type));
         ui->statusBar->showMessage("Success open " + seq->path(), LongTime);
@@ -421,6 +438,36 @@ void MainWindow::handleVideoEvent(QEvent *e)
     update();
 }
 
+void MainWindow::update_recent()
+{
+    QSettings settings(Author, Title);
+    QStringList files = settings.value("recent").toStringList();
+
+    for (int i = 0; i < recent.size(); ++i)
+        if (i < files.size()) {
+            QString name = QFileInfo(files[i]).fileName();
+            QString text = tr("&%1 %2").arg(i + 1).arg(name);
+            recent[i]->setText(text);
+            recent[i]->setData(files[i]);
+            recent[i]->setVisible(true);
+        }else
+            recent[i]->setVisible(false);
+
+    separator[0]->setVisible(!files.isEmpty());
+    separator[1]->setVisible(!files.isEmpty());
+}
+
+void MainWindow::get_folder()
+{
+    QSettings settings(Author, Title);
+    image_folder = settings.value("folder").toString();
+    if (QDir(image_folder).exists())
+        QDir::setCurrent(image_folder);
+    image_folder = QFileDialog::getExistingDirectory(this, "Select Image Folder");
+    image_folder = QFileInfo(image_folder).absoluteFilePath();
+    settings.setValue("folder", image_folder);
+}
+
 void MainWindow::on_action_Open_triggered()
 {
     QCoreApplication::postEvent(this, new QEvent(OpenSequence));
@@ -450,9 +497,20 @@ void MainWindow::on_slider_valueChanged(int value)
     QString text = QString::number(value) + "/" + QString::number(max);
     ui->progress->setText(text);
 
-    seq->set(value, state != Play);
+    seq->set(value);
+    if (state == Normal)
+        seq->generate();
     ui->type->setText(Annotation::toString(seq->annotation().type));
     update();
+}
+
+void MainWindow::open_recent()
+{
+    QAction *action = qobject_cast<QAction *>(sender());
+    if (action) {
+        recent_path = action->data().toString();
+        QCoreApplication::postEvent(this, new QEvent(OpenSequence));
+    }
 }
 
 void MainWindow::frame_come()

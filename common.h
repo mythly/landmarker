@@ -27,7 +27,7 @@ const double eps = 1e-16;
 
 //for GUI
 const QString Author = "MoTao", Title = "Landmarker";
-const int LongTime = 2000, ShortTime = 1000;
+const int MaxRecentFiles = 5, LongTime = 2000, ShortTime = 1000;
 const qreal ScaleFactor = 1.1;
 const int CacheWidth = 4, CacheSize = 256;
 

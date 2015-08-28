@@ -41,6 +41,7 @@ Sequence::Sequence(QString path, QString dir)
     }
 
     set(1);
+    generate();
     flag_open = true;
 }
 
@@ -148,15 +149,21 @@ const QImage& Sequence::image(int idx)
     return *_image[idx];
 }
 
-void Sequence::set(int value, bool gen)
-{    
-    if (value > 0)
-        n = value - 1;
-    if (gen && (_a[n]->type == Annotation::Empty || _a[n]->type == Annotation::Auto)) {
-        if (n > 0 && _a[n - 1]->type == Annotation::Unclear) {
-            _a[n]->type = Annotation::Unclear;
-            return;
-        }
+void Sequence::set(int value)
+{
+    n = value - 1;
+    if (n > 0 && _a[n - 1]->type == Annotation::Unclear && _a[n]->type == Annotation::Empty)
+        _a[n]->type = Annotation::Unclear;
+}
+
+int Sequence::get()
+{
+    return n + 1;
+}
+
+void Sequence::generate()
+{
+    if (_a[n]->type == Annotation::Empty || _a[n]->type == Annotation::Auto) {
         Mat gray0, gray1;
         Point2f landmark0[M], landmark1[M];
         if (n > 0 && (_a[n - 1]->type == Annotation::Manual || _a[n - 1]->type == Annotation::Auto)) {
@@ -181,9 +188,4 @@ void Sequence::set(int value, bool gen)
     }
     if (_a[n]->type == Annotation::Manual || _a[n]->type == Annotation::Auto)
         _c = _a[n]->camera;
-}
-
-int Sequence::get()
-{
-    return n + 1;
 }

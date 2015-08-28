@@ -64,19 +64,18 @@ signals:
     void changed();
 
 protected:
-    void paintEvent(QPaintEvent *e);    
+    void paintEvent(QPaintEvent *e);
+    void wheelEvent(QWheelEvent *e);
     void mousePressEvent(QMouseEvent *e);
     void mouseMoveEvent(QMouseEvent *e);
     void mouseReleaseEvent(QMouseEvent *);
 
 private:
     enum FlagDrag {
-        EyeLeft, EyeRight, Nose, MouseLeft, MouseRight, Eyes, Mouse, Empty
+        EyeLeft, EyeRight, Nose, MouseLeft, MouseRight, Empty
     };
     QPointF toGlobal(QPointF p);
-
-    FlagDrag target(const Annotation& a, QPointF gp, qreal limit);    
-    void drag(Annotation &a, QPointF from, QPointF to);
+    FlagDrag target(const Annotation& a, QPointF gp, qreal limit);        
 
 private:
     Sequence *s;
@@ -102,6 +101,9 @@ private:
     void handleSequenceEvent(QEvent *e);
     void handleVideoEvent(QEvent *e);
 
+    void update_recent();
+    void get_folder();
+
 protected:
     bool eventFilter(QObject *obj, QEvent *e);
 
@@ -112,6 +114,7 @@ private slots:
     void on_playButton_clicked();
     void on_slider_valueChanged(int value);
 
+    void open_recent();
     void frame_come();
     void refresh();
 
@@ -121,6 +124,10 @@ private:
     FaceScreen *fs;
     Sequence *seq;
     QString image_folder;
+
+    QAction* separator[2];
+    QVector<QAction*> recent;
+    QString recent_path;
 
     State state;
     QTimer *timer_frame;

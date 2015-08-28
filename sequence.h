@@ -26,8 +26,9 @@ public:
     QRectF &camera();
     const QImage &image(int idx = -1);
 
-    void set(int value = -1, bool gen = true);
+    void set(int value);
     int get();
+    void generate();
 
 private:
     bool flag_open;
