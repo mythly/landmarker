@@ -314,7 +314,7 @@ void Annotation::get_camera()
     double scale;
     calculate_face(sphere_center, 50, center, scale, up);
 
-    qreal w = 150 * scale, h = 150 * scale;
+    qreal w = 160 * scale, h = 160 * scale;
     qreal x = landmark[2].x() - w / 2;
     qreal y = landmark[2].y() - h / 2;
     camera = QRectF(x, y, w, h);

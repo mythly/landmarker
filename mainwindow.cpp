@@ -18,7 +18,7 @@ GlobalScreen::~GlobalScreen()
 
 QString GlobalScreen::hint()
 {        
-    return "visual region : " + toString(s->camera());
+    return "camera : " + toString(s->camera());
 }
 
 void GlobalScreen::play()
@@ -79,6 +79,7 @@ void GlobalScreen::mousePressEvent(QMouseEvent *e)
     if (c.contains(gp)) {
         flag_drag = Global;
         start_pos = gp;
+        emit changed();
     }else {
         c.moveCenter(gp);        
         emit changed();
@@ -173,6 +174,7 @@ void FaceScreen::wheelEvent(QWheelEvent *e)
         return;
 
     c = QRectF(x, y, w, h);
+    hints = "Camera : " + toString(s->camera());
     emit changed();
 }
 
@@ -313,6 +315,12 @@ void MainWindow::handleKeyEvent(QKeyEvent *e)
         delta = ui->slider->pageStep();
         break;
     case Qt::Key_Space:
+        if (state == Play) {
+            QEvent e(StopVideo);
+            handleVideoEvent(&e);
+        }else
+            delta = ui->slider->singleStep();
+        break;
     case Qt::Key_Right:
     case Qt::Key_D:
         delta = ui->slider->singleStep();

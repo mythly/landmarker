@@ -152,6 +152,8 @@ const QImage& Sequence::image(int idx)
 void Sequence::set(int value)
 {
     n = value - 1;
+    if (_a[n]->type == Annotation::Manual || _a[n]->type == Annotation::Auto)
+        _c = _a[n]->camera;
 }
 
 int Sequence::get()

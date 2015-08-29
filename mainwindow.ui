@@ -60,8 +60,17 @@
     </item>
     <item row="1" column="5">
      <widget class="QLabel" name="type">
+      <property name="minimumSize">
+       <size>
+        <width>75</width>
+        <height>0</height>
+       </size>
+      </property>
       <property name="text">
        <string>Empty</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
       </property>
      </widget>
     </item>
