@@ -471,8 +471,9 @@ void MainWindow::get_folder()
     image_folder = settings.value("folder").toString();
     if (QDir(image_folder).exists())
         QDir::setCurrent(image_folder);
-    image_folder = QFileDialog::getExistingDirectory(this, "Select Image Folder");
-    image_folder = QFileInfo(image_folder).absoluteFilePath();
+    QString path = QFileDialog::getExistingDirectory(this, "Select Image Folder");
+    if (!path.isEmpty())
+        image_folder = QFileInfo(path).absoluteFilePath();
     settings.setValue("folder", image_folder);
 }
 
