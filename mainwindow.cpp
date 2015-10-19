@@ -172,9 +172,9 @@ void FaceScreen::wheelEvent(QWheelEvent *e)
         return;
     if (f > 1 && w > s->width() && h > s->height())
         return;
-
     c = QRectF(x, y, w, h);
-    hints = "Camera : " + toString(s->camera());
+    hints = "Camera : " + toString(s->camera());        
+
     emit changed();
 }
 
@@ -301,7 +301,7 @@ void MainWindow::handleKeyEvent(QKeyEvent *e)
     if (state == Empty)
         return;    
     int delta = 0;
-    switch (e->key()) {
+    switch (e->key()) {    
     case Qt::Key_Up:
     case Qt::Key_W:
         delta = -ui->slider->pageStep();

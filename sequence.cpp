@@ -38,7 +38,7 @@ Sequence::Sequence(QString path, QString dir)
         QJsonObject a = arr[i].toObject();
         _a.push_back(new Annotation(a));
         _image.push_back(NULL);
-    }
+    }        
 
     set(1);
     generate();
@@ -57,6 +57,22 @@ Sequence::~Sequence()
 
 bool Sequence::save()
 {
+    for (int i = 0; i < _N; ++i) {
+        Annotation &a = *_a[i];
+        if (a.type != Annotation::Manual)
+            continue;
+        QPointF p0 = a.landmark[0], p1 = a.landmark[1], p01 = (p0 + p1) / 2;
+        QPointF p3 = a.landmark[3], p4 = a.landmark[4], p34 = (p3 + p4) / 2;
+        if ((p1.x() - p0.x()) * (p34.y() - p0.y()) < (p34.x() - p0.x()) * (p1.y() - p0.y())) {
+            a.modify_landmark(0, p1);
+            a.modify_landmark(1, p0);
+        }
+        if ((p4.x() - p3.x()) * (p01.y() - p3.y()) > (p01.x() - p3.x()) * (p4.y() - p3.y())) {
+            a.modify_landmark(3, p4);
+            a.modify_landmark(4, p3);
+        }
+    }
+
     obj["name"] = _name;
     obj["nFrames"] = _N;
     obj["rate"] = _rate;
